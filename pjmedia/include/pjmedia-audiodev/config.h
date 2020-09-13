@@ -56,6 +56,10 @@ PJ_BEGIN_DECL
 #   endif
 #endif
 
+#ifndef PJMEDIA_AUDIO_DEV_HAS_AIRB_AUDIO
+#define PJMEDIA_AUDIO_DEV_HAS_AIRB_AUDIO 1
+#endif
+
 /**
  * This setting controls whether PortAudio support should be included.
  *
