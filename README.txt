@@ -1,3 +1,5 @@
+**This repo clones PJSIP 2.9, it add support for airbridge nuc980 board.**
+
  Copyright (C) 2003-2008 Benny Prijono <benny@prijono.org>
  Copyright (C) 2008-2011 Teluu Inc. (http://www.teluu.com)
 
