@@ -1,9 +1,10 @@
 /* $Id$ */
-#include "airb_dev.h"
 #include <pj/assert.h>
 #include <pj/log.h>
 #include <pj/os.h>
 #include <pjmedia-audiodev/audiodev_imp.h>
+#include "airb_dev.h"
+#include "airb/vp_interface.h"
 
 #if PJMEDIA_AUDIO_DEV_HAS_AIRB_AUDIO
 
