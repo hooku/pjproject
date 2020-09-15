@@ -44,7 +44,13 @@ export _CFLAGS 	:= $(CC_CFLAGS) $(OS_CFLAGS) $(HOST_CFLAGS) $(M_CFLAGS) \
 		   $(CC_INC)../../pjlib-util/include \
 		   $(CC_INC)../../pjmedia/include \
 		   $(CC_INC)../../pjnath/include \
-		   $(CC_INC)../..
+		   $(CC_INC)../.. \
+		   $(CC_INC)../../pjmedia/src/pjmedia-audiodev/airb/VP_Demo_2.8.0/VoiceEngines/CommonResources/AC48xDriver/Include \
+		   $(CC_INC)../../pjmedia/src/pjmedia-audiodev/airb/VP_Demo_2.8.0/VoiceEngines/CommonResources/Include \
+		   $(CC_INC)../../pjmedia/src/pjmedia-audiodev/airb/VP_Demo_2.8.0/VoiceEngines/VoicePacketizer/Include \
+		   $(CC_INC)../../pjmedia/src/pjmedia-audiodev/airb/VP_Demo_2.8.0/VoicePacketizerSimpleDemo \
+		   -DAC48X_CURRENT_CONFIG=AC48X_CONFIG_AC483_DEMO
+
 export _CXXFLAGS:= $(CC_CXXFLAGS) $(OS_CXXFLAGS) $(M_CXXFLAGS) \
 		   $(HOST_CXXFLAGS) $(CXXFLAGS) $(_CFLAGS) 
 
@@ -92,7 +98,34 @@ export PJMEDIA_AUDIODEV_SRCDIR = ../src/pjmedia-audiodev
 export PJMEDIA_AUDIODEV_OBJS +=  audiodev.o audiotest.o errno.o \
 				 legacy_dev.o null_dev.o pa_dev.o wmme_dev.o \
 				 alsa_dev.o bb10_dev.o bdimad_dev.o \
-				 android_jni_dev.o opensl_dev.o airb_dev.o
+				 android_jni_dev.o opensl_dev.o airb_dev.o \
+				 airb/vp_interface.o \
+				 airb/VP_Demo_2.8.0/VoiceDL/DL48302CE6.o \
+				 airb/VP_Demo_2.8.0/VoiceDL/DL48304CE2_clk_gen.o \
+				 airb/VP_Demo_2.8.0/VoiceDL/DL48802CE3_clk_gen.o \
+				 airb/VP_Demo_2.8.0/VoiceEngines/CommonResources/AC48xDriver/Source/AC48xHi.o \
+				 airb/VP_Demo_2.8.0/VoiceEngines/CommonResources/AC48xDriver/Source/AC48xLo.o \
+				 airb/VP_Demo_2.8.0/VoiceEngines/CommonResources/Source/ATMIFStub.o \
+				 airb/VP_Demo_2.8.0/VoiceEngines/CommonResources/Source/DLDescriptors.o \
+				 airb/VP_Demo_2.8.0/VoiceEngines/CommonResources/Source/EvntHndl.o \
+				 airb/VP_Demo_2.8.0/VoiceEngines/CommonResources/Source/Init.o \
+				 airb/VP_Demo_2.8.0/VoiceEngines/CommonResources/Source/Statics.o \
+				 airb/VP_Demo_2.8.0/VoiceEngines/CommonResources/Source/UserFunc.o \
+				 airb/VP_Demo_2.8.0/VoiceEngines/CommonResources/Source/VoiceMediator.o \
+				 airb/VP_Demo_2.8.0/VoiceEngines/VoicePacketizer/Source/AC48xIF.o \
+				 airb/VP_Demo_2.8.0/VoiceEngines/VoicePacketizer/Source/Cypher.o \
+				 airb/VP_Demo_2.8.0/VoiceEngines/VoicePacketizer/Source/JitterBf.o \
+				 airb/VP_Demo_2.8.0/VoiceEngines/VoicePacketizer/Source/RecordPck.o \
+				 airb/VP_Demo_2.8.0/VoiceEngines/VoicePacketizer/Source/RTCP.o \
+				 airb/VP_Demo_2.8.0/VoiceEngines/VoicePacketizer/Source/RTPDec.o \
+				 airb/VP_Demo_2.8.0/VoiceEngines/VoicePacketizer/Source/RTPEnc.o \
+				 airb/VP_Demo_2.8.0/VoiceEngines/VoicePacketizer/Source/T38Dec.o \
+				 airb/VP_Demo_2.8.0/VoiceEngines/VoicePacketizer/Source/T38Enc.o \
+				 airb/VP_Demo_2.8.0/VoiceEngines/VoicePacketizer/Source/Tables.o \
+				 airb/VP_Demo_2.8.0/VoiceEngines/VoicePacketizer/Source/VoicePck.o \
+				 airb/VP_Demo_2.8.0/VoiceEngines/VoicePacketizer/Source/vpInit.o \
+				 airb/VP_Demo_2.8.0/VoiceEngines/VoicePacketizer/Source/vpStatics.o
+
 export PJMEDIA_AUDIODEV_CFLAGS += $(_CFLAGS)
 export PJMEDIA_AUDIODEV_CXXFLAGS += $(_CXXFLAGS)
 export PJMEDIA_AUDIODEV_LDFLAGS += $(PJMEDIA_LDLIB) \
