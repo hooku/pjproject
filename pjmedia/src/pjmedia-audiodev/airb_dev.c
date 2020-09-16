@@ -3,6 +3,7 @@
 #include <pj/log.h>
 #include <pj/os.h>
 #include <pjmedia-audiodev/audiodev_imp.h>
+#include <Typedef.h>
 #include "airb_dev.h"
 #include "airb/vp_interface.h"
 

@@ -20,6 +20,8 @@
 #include <pjmedia-audiodev/audiodev_imp.h>
 #include <pj/assert.h>
 
+#undef PJMEDIA_AUDIO_DEV_HAS_ALSA
+
 #define THIS_FILE   "audiodev.c"
 
 

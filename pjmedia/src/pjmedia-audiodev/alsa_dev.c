@@ -25,6 +25,8 @@
 #include <pj/pool.h>
 #include <pjmedia/errno.h>
 
+#undef PJMEDIA_AUDIO_DEV_HAS_ALSA
+
 #if defined(PJMEDIA_AUDIO_DEV_HAS_ALSA) && PJMEDIA_AUDIO_DEV_HAS_ALSA
 
 #include <sys/syscall.h>
