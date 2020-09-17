@@ -100,6 +100,7 @@ export PJMEDIA_AUDIODEV_OBJS +=  audiodev.o audiotest.o errno.o \
 				 alsa_dev.o bb10_dev.o bdimad_dev.o \
 				 android_jni_dev.o opensl_dev.o airb_dev.o \
 				 airb/vp_interface.o \
+				 airb/vp_callback.o \
 				 airb/VP_Demo_2.8.0/VoiceDL/DL48302CE6.o \
 				 airb/VP_Demo_2.8.0/VoiceDL/DL48304CE2_clk_gen.o \
 				 airb/VP_Demo_2.8.0/VoiceDL/DL48802CE3_clk_gen.o \
