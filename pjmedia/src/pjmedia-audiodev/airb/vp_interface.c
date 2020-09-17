@@ -24,11 +24,20 @@
 #if ENABLE_T38_FAX_RELAY
 #include "T38Dec.h"
 #endif
+
+#include <pjmedia/rtp.h>
+
 #include "../airb_dev.h"
 #include "vp_interface.h"
 
 enum TPCMLawSelect UsedPcmLaw = MuLaw;
 int IdlePcm = 0xFF;
+
+extern int InitializeEvaluationBoard();
+static void vp_ConfigureUserPCMSetupInfo(struct TUserPCMSetupInfo *UserPCMInfo);
+static int vp_ConfigureCallProgressTone(struct acTCallProgressTone *UserCallProgressTones);
+static void vp_ConfigureUserChannelSetupInfo(TUserChannelSetupInfo *UserChannelSetupInfo, int ChannelID);
+static void vp_ConnectChannels(TUserChannelSetupInfo *UserChannelInfo1, int CID1, TUserChannelSetupInfo *UserChannelInfo2, int CID2);
 
 void vp_Init()
 {
@@ -48,14 +57,14 @@ void vp_Init()
     struct TJitterBufStatusReportParams JitterBufStatusReportParams = {0, 100};
     struct TExtendedVoiceParams ExtVoiceParams = {0}; //GetExtVoiceParams();
 
-    AB_FUNC_ENT();
+    VP_FUNC_ENT();
 
     // Initialize the evaluation board
-    AB_DBG("Initializing evaluation board ...\n");
+    VP_DBG("Initializing evaluation board ...\n");
     if (InitializeEvaluationBoard() == -1)
         ErrorHandler(FatalErrorMsg, -1, __FILE__, __LINE__, acUnknownOrigin, -1, -1,
                      "Error initializing evaluation board!");
-    AB_DBG("Done.\n\n");
+    VP_DBG("Done.\n\n");
 
     /* Sleep(500); */
     usleep(500000);
@@ -70,7 +79,7 @@ void vp_Init()
     for (ChannelID = 0; ChannelID < MAX_CHANNELS_CAPACITY; ChannelID++)
         vp_ConfigureUserChannelSetupInfo(&UserChannelSetupInfo[ChannelID], ChannelID);
 
-    AB_DBG("Starting the VoicePacketizer Stack ...\n");
+    VP_DBG("Starting the VoicePacketizer Stack ...\n");
 
     // Start the VoicePacketizer stack
     // This convinient function performs all device and channel initializations and setup.
@@ -93,57 +102,81 @@ void vp_Init()
         &JitterBufStatusReportParams,
         ExtVoiceParams);
 
-    AB_DBG("VoicePacketizer version is %d.%d.\n\n", StackVersionNumber / 100, StackVersionNumber % 100);
+    VP_DBG("VoicePacketizer version is %d.%d.\n\n", StackVersionNumber / 100, StackVersionNumber % 100);
 
-    AB_DBG("Connecting channels 0 & 1.\n\n");
+    /* this code origins from AudioCodec, but is disabled in airbridge commit
+    VP_DBG("Connecting channels 0 & 1.\n\n");
     vp_ConnectChannels(&UserChannelSetupInfo[0], 0, &UserChannelSetupInfo[1], 1);
+    */
 
-    AB_FUNC_LEV();
+    /* second time init as fixed by airbridge */
+    InitializeEvaluationBoard();
+
+    VP_FUNC_LEV();
 }
 
 void vp_Deinit()
 {
-    AB_FUNC_ENT();
+    VP_FUNC_ENT();
 
-    AB_FUNC_LEV();
+    vpCloseStack();
+
+    VP_FUNC_LEV();
 }
 
 void vp_TestVoiceStream()
 {
-    AB_FUNC_ENT();
+    VP_FUNC_ENT();
 
-    AB_DBG("Starting voice streaming ...\n\n");
+    VP_DBG("Starting voice streaming ...\n\n");
     // Run the polling process in an infinite loop
     vp_PollingVoiceStream();
 
-    AB_DBG("Demo ended.\n");
+    VP_DBG("Demo ended.\n");
     while (1)
         ;
-    
-    AB_FUNC_LEV();
+
+    VP_FUNC_LEV();
 }
 
 void vp_PollingVoiceStream()
 {
-    AB_FUNC_ENT();
+    //VP_FUNC_ENT();
 
-    while (1)
-    {
-        // Invoke the polling process (from DSP)
-        vpPollingProcess(AC48X_NUM_OF_DEVICES);
-        // Invoke the polling process (from FIFO).
-        vpPollingMediaStreamFifo();
-        //Sleep(10);
-        /* Sleep(5); */
-        usleep(5000);
-    }
+    // Invoke the polling process (from DSP)
+    vpPollingProcess(AC48X_NUM_OF_DEVICES);
+    // Invoke the polling process (from FIFO).
+    vpPollingMediaStreamFifo();
+    //Sleep(10);
+    /* Sleep(5); */
+    usleep(5000);
 
-    AB_FUNC_LEV();
+    //VP_FUNC_LEV();
 }
 
-void vp_ConfigureUserPCMSetupInfo(struct TUserPCMSetupInfo *UserPCMInfo)
+void vp_RTPDecode(char *FramePtr, int FrameLen)
 {
-    AB_FUNC_ENT();
+    int i;
+
+    VP_FUNC_ENT();
+
+    //VP_DBG("%x %x %x %x\n", *FramePtr, *(FramePtr+1), *(FramePtr+2), *(FramePtr+4));
+    for (i = 0; i < FrameLen; i++)
+    {
+        if (FramePtr[i] != 0)
+        {
+            VP_DBG("i=%d d=%x\n", i, FramePtr[i]);
+            break;
+        }
+    }
+    RTPDecoder(VP_DEFAULT_CID, FramePtr, FrameLen);
+
+    VP_FUNC_LEV();
+}
+
+static void vp_ConfigureUserPCMSetupInfo(struct TUserPCMSetupInfo *UserPCMInfo)
+{
+    VP_FUNC_ENT();
 
     UserPCMInfo->PCMLawSelect = (AC48XIF_TYPE != AC48XIF_WINDOWS_PCI_ADB2255_DRIVER) ? UsedPcmLaw : ALaw; // 1=alaw 3=mulaw
     UserPCMInfo->E1_T1 = 0;                                                                               // 0=E1 (32 DS0), 1=T1 (24 DS0)
@@ -159,15 +192,15 @@ void vp_ConfigureUserPCMSetupInfo(struct TUserPCMSetupInfo *UserPCMInfo)
     UserPCMInfo->CPUClockOutEnable = 0;                                                                   // CPU Clock Out output pin (0-disable, 1-enable)
     UserPCMInfo->PCMDataDelay = 0;                                                                        // The beginning of actual PCM data reception or transmission with respect to the start of the frame sync signal.
 
-    AB_FUNC_LEV();
+    VP_FUNC_LEV();
 }
 
 /*
  * Defines call progress tones
  */
-int vp_ConfigureCallProgressTone(struct acTCallProgressTone *UserCallProgressTones)
+static int vp_ConfigureCallProgressTone(struct acTCallProgressTone *UserCallProgressTones)
 {
-    AB_FUNC_ENT();
+    VP_FUNC_ENT();
 
     // CallProgress Tones:
     UserCallProgressTones[0].ToneType = acCallProgressDialTone; //the "logical" tone type
@@ -184,7 +217,7 @@ int vp_ConfigureCallProgressTone(struct acTCallProgressTone *UserCallProgressTon
     UserCallProgressTones[0].ToneCadences[1].TOnDuration = 0;     //[10msec] second signal on time interval
     UserCallProgressTones[0].ToneCadences[1].TOffDuration = 0;    //[10msec] second signal off time interval
 
-    AB_FUNC_LEV();
+    VP_FUNC_LEV();
 
     // Return the number of defined call progress tones.
     return (1);
@@ -193,22 +226,22 @@ int vp_ConfigureCallProgressTone(struct acTCallProgressTone *UserCallProgressTon
 /*
  * Configures all the channel parameters.
  */
-void vp_ConfigureUserChannelSetupInfo(TUserChannelSetupInfo *UserChannelSetupInfo, int ChannelID)
+static void vp_ConfigureUserChannelSetupInfo(TUserChannelSetupInfo *UserChannelSetupInfo, int ChannelID)
 {
-    AB_FUNC_ENT();
-    
+    VP_FUNC_ENT();
+
     // Set the channel configuration array to its default values:
     SetChannelDefaults(UserChannelSetupInfo, ChannelID, 0);
 
-    AB_FUNC_LEV();
+    VP_FUNC_LEV();
 }
 
 /*
  * Open & cross connect channels CID1 & CID2
  */
-void vp_ConnectChannels(TUserChannelSetupInfo *UserChannelInfo1, int CID1, TUserChannelSetupInfo *UserChannelInfo2, int CID2)
+static void vp_ConnectChannels(TUserChannelSetupInfo *UserChannelInfo1, int CID1, TUserChannelSetupInfo *UserChannelInfo2, int CID2)
 {
-    AB_FUNC_ENT();
+    VP_FUNC_ENT();
 
     // Activate CID1 and connect it to CID2
     UserChannelInfo1->Active = 1;
@@ -216,11 +249,15 @@ void vp_ConnectChannels(TUserChannelSetupInfo *UserChannelInfo1, int CID1, TUser
     UserChannelInfo1->TxCID = CID2;
     vpOpenChannel(CID1, UserChannelInfo1);
 
-    // Activate CID2 and connect it to CID1
-    UserChannelInfo2->Active = 1;
-    UserChannelInfo2->RTPActive = 1;
-    UserChannelInfo2->TxCID = CID1;
-    vpOpenChannel(CID2, UserChannelInfo2);
+    /* CID1 can equal CID2? */
+    if (CID1 != CID2)
+    {
+        // Activate CID2 and connect it to CID1
+        UserChannelInfo2->Active = 1;
+        UserChannelInfo2->RTPActive = 1;
+        UserChannelInfo2->TxCID = CID1;
+        vpOpenChannel(CID2, UserChannelInfo2);
+    }
 
-    AB_FUNC_LEV();
+    VP_FUNC_LEV();
 }
