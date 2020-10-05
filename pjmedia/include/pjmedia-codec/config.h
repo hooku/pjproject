@@ -46,7 +46,7 @@
  * Unless specified otherwise, L16 codec is included by default.
  */
 #ifndef PJMEDIA_HAS_L16_CODEC
-#   define PJMEDIA_HAS_L16_CODEC    1
+#   define PJMEDIA_HAS_L16_CODEC    0
 #endif
 
 
@@ -102,7 +102,7 @@
  * Unless specified otherwise, GSM codec is included by default.
  */
 #ifndef PJMEDIA_HAS_GSM_CODEC
-#   define PJMEDIA_HAS_GSM_CODEC    1
+#   define PJMEDIA_HAS_GSM_CODEC    0
 #endif
 
 
@@ -110,7 +110,7 @@
  * Unless specified otherwise, Speex codec is included by default.
  */
 #ifndef PJMEDIA_HAS_SPEEX_CODEC
-#   define PJMEDIA_HAS_SPEEX_CODEC    1
+#   define PJMEDIA_HAS_SPEEX_CODEC    0
 #endif
 
 /**
@@ -133,7 +133,7 @@
  * Unless specified otherwise, iLBC codec is included by default.
  */
 #ifndef PJMEDIA_HAS_ILBC_CODEC
-#   define PJMEDIA_HAS_ILBC_CODEC    1
+#   define PJMEDIA_HAS_ILBC_CODEC    0
 #endif
 
 
@@ -141,7 +141,7 @@
  * Unless specified otherwise, G.722 codec is included by default.
  */
 #ifndef PJMEDIA_HAS_G722_CODEC
-#   define PJMEDIA_HAS_G722_CODEC    1
+#   define PJMEDIA_HAS_G722_CODEC    0
 #endif
 
 
@@ -295,7 +295,7 @@
  * Default: 0
  */
 #ifndef PJMEDIA_HAS_PASSTHROUGH_CODECS
-#   define PJMEDIA_HAS_PASSTHROUGH_CODECS	0
+#   define PJMEDIA_HAS_PASSTHROUGH_CODECS	1
 #endif
 
 /**
@@ -587,7 +587,7 @@
  * Default: 1
  */
 #ifndef PJMEDIA_HAS_VPX_CODEC_VP8
-#   define PJMEDIA_HAS_VPX_CODEC_VP8		1
+#   define PJMEDIA_HAS_VPX_CODEC_VP8		0
 #endif
 
 /**

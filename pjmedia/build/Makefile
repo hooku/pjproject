@@ -49,7 +49,9 @@ export _CFLAGS 	:= $(CC_CFLAGS) $(OS_CFLAGS) $(HOST_CFLAGS) $(M_CFLAGS) \
 		   $(CC_INC)../../pjmedia/src/pjmedia-audiodev/airb/VP_Demo_2.8.0/VoiceEngines/CommonResources/Include \
 		   $(CC_INC)../../pjmedia/src/pjmedia-audiodev/airb/VP_Demo_2.8.0/VoiceEngines/VoicePacketizer/Include \
 		   $(CC_INC)../../pjmedia/src/pjmedia-audiodev/airb/VP_Demo_2.8.0/VoicePacketizerSimpleDemo \
-		   -DAC48X_CURRENT_CONFIG=AC48X_CONFIG_AC483_DEMO
+		   -DAC48X_CURRENT_CONFIG=AC48X_CONFIG_AC483_DEMO \
+		   -DPJMEDIA_HAS_PASSTHROUGH_CODECS=1 -DPJMEDIA_HAS_PASSTHROUGH_CODEC_PCMU=1 \
+		   -DPJMEDIA_CONF_USE_SWITCH_BOARD=1
 
 export _CXXFLAGS:= $(CC_CXXFLAGS) $(OS_CXXFLAGS) $(M_CXXFLAGS) \
 		   $(HOST_CXXFLAGS) $(CXXFLAGS) $(_CFLAGS) 
@@ -125,7 +127,8 @@ export PJMEDIA_AUDIODEV_OBJS +=  audiodev.o audiotest.o errno.o \
 				 airb/VP_Demo_2.8.0/VoiceEngines/VoicePacketizer/Source/Tables.o \
 				 airb/VP_Demo_2.8.0/VoiceEngines/VoicePacketizer/Source/VoicePck.o \
 				 airb/VP_Demo_2.8.0/VoiceEngines/VoicePacketizer/Source/vpInit.o \
-				 airb/VP_Demo_2.8.0/VoiceEngines/VoicePacketizer/Source/vpStatics.o
+				 airb/VP_Demo_2.8.0/VoiceEngines/VoicePacketizer/Source/vpStatics.o \
+				 airb/VP_Demo_2.8.0/VoiceEngines/CommonResources/Source/voip_hpi.o
 
 export PJMEDIA_AUDIODEV_CFLAGS += $(_CFLAGS)
 export PJMEDIA_AUDIODEV_CXXFLAGS += $(_CXXFLAGS)

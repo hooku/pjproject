@@ -33,7 +33,7 @@
  *--------------------------------------------------------------------*/
 void SendToNetwork(int CID, char *FramePtr, short FrameLen)
 {
-    VP_FUNC_ENT();
+    //VP_FUNC_ENT();
 
     /* Simulate a network loopback by calling the decoder directly
 	// Use the channel TxCID parameter for channel cross connections.*/
@@ -41,7 +41,7 @@ void SendToNetwork(int CID, char *FramePtr, short FrameLen)
 
     airb_ca_cb(FramePtr, (short)FrameLen);
 
-    VP_FUNC_LEV();
+    //VP_FUNC_LEV();
 }
 
 /*--------------------------------------------------------------------
@@ -61,13 +61,13 @@ void SendToNetwork(int CID, char *FramePtr, short FrameLen)
  *--------------------------------------------------------------------*/
 void SendRTCPToNetwork(int CID, char *FramePtr, short FrameLen)
 {
-    VP_FUNC_ENT();
+    //VP_FUNC_ENT();
 
     /* Simulate a network loopback by calling the decoder directly
 	// Use the channel TxCID parameter for channel cross connections.*/
-    RTPDecoder(ChInfo[CID].TxCID, FramePtr, (short)FrameLen);
+    /* RTPDecoder(ChInfo[CID].TxCID, FramePtr, (short)FrameLen); */
 
-    VP_FUNC_LEV();
+    //VP_FUNC_LEV();
 }
 
 #if ENABLE_T38_FAX_RELAY
@@ -118,12 +118,12 @@ char *GetNewFramePtr(int CID, char **pPayload)
 	// to a LAN buffer, and not a static storage.*/
     static char NITxBuff[MAX_VOIP_SIZE];
 
-    VP_FUNC_ENT();
+    //VP_FUNC_ENT();
 
     /* The payload will start after the RTP header*/
     *pPayload = NITxBuff + sizeof(struct TRTPHeader);
 
-    VP_FUNC_LEV();
+    //VP_FUNC_LEV();
 
     /* Return a pointer to the buffer*/
     return (NITxBuff);
@@ -149,9 +149,8 @@ char *GetNewRTCPFramePtr(int CID)
 	// to a LAN buffer, and not a static storage.*/
     static char NITxBuff[MAX_VOIP_SIZE];
 
-    VP_FUNC_ENT();
-
-    VP_FUNC_LEV();
+    //VP_FUNC_ENT();
+    //VP_FUNC_LEV();
 
     /* Return a pointer to the buffer*/
     return (NITxBuff);
@@ -181,12 +180,12 @@ char *GetNewT38FramePtr(int CID, char **pPayload)
 	// to a LAN buffer, and not a static storage.*/
     static char NITxBuff[MAX_VOIP_SIZE];
 
-    VP_FUNC_ENT();
+    //VP_FUNC_ENT();
 
     /* In this case (T38) the payload is at the buffer's beginning.*/
     *pPayload = NITxBuff;
 
-    VP_FUNC_LEV();
+    //VP_FUNC_LEV();
 
     /* Return a pointer to the buffer*/
     return (NITxBuff);
@@ -477,7 +476,6 @@ void SignalEvent(int CID, int EventType)
 int FirstIncomingPacketDetected(int PacketType, int CID, char *pBuffer)
 {
     VP_FUNC_ENT();
-
     VP_FUNC_LEV();
 
     return (0);
@@ -528,8 +526,8 @@ void DelayForDeviceResponse(void)
 *--------------------------------------------------------------------*/
 unsigned int VP_GetSystemTime(void)
 {
-    VP_FUNC_ENT();
-    VP_FUNC_LEV();
+    //VP_FUNC_ENT();
+    //VP_FUNC_LEV();
 
     return 0;
 }
@@ -553,8 +551,8 @@ unsigned int VP_GetSystemTime(void)
 *--------------------------------------------------------------------*/
 int SendRecPacketToIO(short *RecPacket, short RecPacketLength)
 {
-    VP_FUNC_ENT();
-    VP_FUNC_LEV();
+    //VP_FUNC_ENT();
+    //VP_FUNC_LEV();
 
     return 0;
 }
@@ -575,8 +573,8 @@ int SendRecPacketToIO(short *RecPacket, short RecPacketLength)
 *--------------------------------------------------------------------*/
 int GetNewRecordFramePtr(int PacketLength, char **RecPacket)
 {
-    VP_FUNC_ENT();
-    VP_FUNC_LEV();
+    //VP_FUNC_ENT();
+    //VP_FUNC_LEV();
 
     return 0;
 }
@@ -603,8 +601,8 @@ int GetNewRecordFramePtr(int PacketLength, char **RecPacket)
  *--------------------------------------------------------------------*/
 int SendTDMNetworkPacketToNetwork(int CID, char *FramePtr, short FrameLen, acTNetworkTDMRecordedPacket NetworkTDMRecordedPacket)
 {
-    VP_FUNC_ENT();
-    VP_FUNC_LEV();
+    //VP_FUNC_ENT();
+    //VP_FUNC_LEV();
 
     return 0;
 }

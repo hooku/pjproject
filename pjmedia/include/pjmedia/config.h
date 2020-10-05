@@ -290,7 +290,7 @@
  * Unless specified otherwise, G711 codec is included by default.
  */
 #ifndef PJMEDIA_HAS_G711_CODEC
-#   define PJMEDIA_HAS_G711_CODEC	    1
+#   define PJMEDIA_HAS_G711_CODEC	    0
 #endif
 
 
@@ -672,7 +672,7 @@
  * By default is enabled.
  */
 #ifndef PJMEDIA_HAS_SPEEX_AEC
-#   define PJMEDIA_HAS_SPEEX_AEC		1
+#   define PJMEDIA_HAS_SPEEX_AEC		0
 #endif
 
 

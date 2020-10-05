@@ -38,8 +38,9 @@ static void vp_ConfigureUserPCMSetupInfo(struct TUserPCMSetupInfo *UserPCMInfo);
 static int vp_ConfigureCallProgressTone(struct acTCallProgressTone *UserCallProgressTones);
 static void vp_ConfigureUserChannelSetupInfo(TUserChannelSetupInfo *UserChannelSetupInfo, int ChannelID);
 static void vp_ConnectChannels(TUserChannelSetupInfo *UserChannelInfo1, int CID1, TUserChannelSetupInfo *UserChannelInfo2, int CID2);
+static void vp_OpenDefaultChannel(TUserChannelSetupInfo *UserChannelInfo1, int CID1);
 
-void vp_Init()
+void vp_Init_DSP()
 {
     // VoicePacketizer configuration structure :
     // These structure are used as input arguments to the VoicePacketzier
@@ -59,15 +60,17 @@ void vp_Init()
 
     VP_FUNC_ENT();
 
-    // Initialize the evaluation board
-    VP_DBG("Initializing evaluation board ...\n");
+    VP_DBG("Init board...\r\n");
     if (InitializeEvaluationBoard() == -1)
         ErrorHandler(FatalErrorMsg, -1, __FILE__, __LINE__, acUnknownOrigin, -1, -1,
                      "Error initializing evaluation board!");
-    VP_DBG("Done.\n\n");
+    VP_DBG("Init board done.\r\n");
 
-    /* Sleep(500); */
+#if (VP_FAST_INIT)
+    usleep(5000);
+#else
     usleep(500000);
+#endif
 
     // Fill in the PCM configuration
     vp_ConfigureUserPCMSetupInfo(&UserPCMInfo);
@@ -104,10 +107,12 @@ void vp_Init()
 
     VP_DBG("VoicePacketizer version is %d.%d.\n\n", StackVersionNumber / 100, StackVersionNumber % 100);
 
-    /* this code origins from AudioCodec, but is disabled in airbridge commit
+    /*
     VP_DBG("Connecting channels 0 & 1.\n\n");
     vp_ConnectChannels(&UserChannelSetupInfo[0], 0, &UserChannelSetupInfo[1], 1);
     */
+
+    vp_OpenDefaultChannel(&UserChannelSetupInfo[0], 0);
 
     /* second time init as fixed by airbridge */
     InitializeEvaluationBoard();
@@ -115,7 +120,7 @@ void vp_Init()
     VP_FUNC_LEV();
 }
 
-void vp_Deinit()
+void vp_Deinit_DSP()
 {
     VP_FUNC_ENT();
 
@@ -141,34 +146,23 @@ void vp_TestVoiceStream()
 
 void vp_PollingVoiceStream()
 {
-    //VP_FUNC_ENT();
+    VP_FUNC_ENT();
 
     // Invoke the polling process (from DSP)
     vpPollingProcess(AC48X_NUM_OF_DEVICES);
     // Invoke the polling process (from FIFO).
     vpPollingMediaStreamFifo();
-    //Sleep(10);
-    /* Sleep(5); */
-    usleep(5000);
 
-    //VP_FUNC_LEV();
+    /* Sleep(5); */
+    //usleep(5000);
+
+    VP_FUNC_LEV();
 }
 
 void vp_RTPDecode(char *FramePtr, int FrameLen)
 {
-    int i;
-
     VP_FUNC_ENT();
 
-    //VP_DBG("%x %x %x %x\n", *FramePtr, *(FramePtr+1), *(FramePtr+2), *(FramePtr+4));
-    for (i = 0; i < FrameLen; i++)
-    {
-        if (FramePtr[i] != 0)
-        {
-            VP_DBG("i=%d d=%x\n", i, FramePtr[i]);
-            break;
-        }
-    }
     RTPDecoder(VP_DEFAULT_CID, FramePtr, FrameLen);
 
     VP_FUNC_LEV();
@@ -233,6 +227,9 @@ static void vp_ConfigureUserChannelSetupInfo(TUserChannelSetupInfo *UserChannelS
     // Set the channel configuration array to its default values:
     SetChannelDefaults(UserChannelSetupInfo, ChannelID, 0);
 
+    /* set to pcmu to fit twilio */
+    UserChannelSetupInfo->VoiceCmd.Coder = G711Mulaw;
+
     VP_FUNC_LEV();
 }
 
@@ -249,15 +246,26 @@ static void vp_ConnectChannels(TUserChannelSetupInfo *UserChannelInfo1, int CID1
     UserChannelInfo1->TxCID = CID2;
     vpOpenChannel(CID1, UserChannelInfo1);
 
-    /* CID1 can equal CID2? */
-    if (CID1 != CID2)
-    {
-        // Activate CID2 and connect it to CID1
-        UserChannelInfo2->Active = 1;
-        UserChannelInfo2->RTPActive = 1;
-        UserChannelInfo2->TxCID = CID1;
-        vpOpenChannel(CID2, UserChannelInfo2);
-    }
+    // Activate CID2 and connect it to CID1
+    UserChannelInfo2->Active = 1;
+    UserChannelInfo2->RTPActive = 1;
+    UserChannelInfo2->TxCID = CID1;
+    vpOpenChannel(CID2, UserChannelInfo2);
+
+    VP_FUNC_LEV();
+}
+
+/*
+ * Open default channel
+ */
+static void vp_OpenDefaultChannel(TUserChannelSetupInfo *UserChannelInfo1, int CID1)
+{
+    VP_FUNC_ENT();
+
+    UserChannelInfo1->Active = 1;
+    UserChannelInfo1->RTPActive = 1;
+    UserChannelInfo1->TxCID = CID1;
+    vpOpenChannel(CID1, UserChannelInfo1);
 
     VP_FUNC_LEV();
 }
