@@ -4,6 +4,7 @@
 #include <pj/log.h>
 #include <pj/os.h>
 #include <pjmedia-audiodev/audiodev_imp.h>
+#include <pjmedia/alaw_ulaw.h>
 #include <pjmedia/rtp.h>
 
 #include <sys/syscall.h>
@@ -11,12 +12,11 @@
 #include "airb/vp_interface.h"
 #include "airb_dev.h"
 
+#include <EvntHndl.h>
+
 #if PJMEDIA_AUDIO_DEV_HAS_AIRB_AUDIO
 
 #define THIS_FILE "airb_dev.c"
-#define BITS_PER_SAMPLE 16
-#define RTP_VERSION 2
-#define RTP_HDR_LEN sizeof(pjmedia_rtp_hdr)
 
 /*
  * the airbridge dsp driver use the following format:
@@ -63,7 +63,11 @@ struct airb_audio_stream
 
     pj_thread_t *airb_thread; /* playback thread */
 
-    char *pb_buf;           /* playback buffer ptr */
+    char *pb_buf; /* playback buffer ptr */
+    /*
+     * the playback buffer2 is a internal buffer that
+     * for converting pjsip frame into DSP frame
+     */
     char *pb_buf2;          /* playback buffer2 ptr */
     unsigned pb_buf_size;   /* playback buffer size */
     unsigned int pb_frames; /* playback samples_per_frame */
@@ -139,6 +143,55 @@ static pjmedia_aud_stream_op stream_op = {
 };
 
 struct airb_audio_stream *g_strm = NULL;
+
+#if AIRB_TEST
+static void airb_test_dtmf(void)
+{
+#define DIG_NUM 10
+    struct acTDigit DigitBuf[DIG_NUM] = {0x00};
+    char num[DIG_NUM] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 0};
+
+    int i;
+
+    for (i = 0; i < DIG_NUM; i++)
+    {
+        DigitBuf[i].Digit = num[i];
+        DigitBuf[i].DigitOnTime = 300;
+        DigitBuf[i].InterDigitTime = 100;
+        DigitBuf[i].SignalingSystem = 1;
+    }
+
+    Dial(0, &DigitBuf, DIG_NUM, GENERATE_TO_LOCAL_SIDE, USER_DIAL_TIMING_DEFAULT);
+}
+
+static void airb_dump_data(unsigned int *buf, unsigned int buf_len)
+{
+    unsigned int i = 0;
+
+#if 1
+    VP_DBG("%x %x %x %x %d\n", *buf, *(buf + 1), *(buf + 2), *(buf + 4), buf_len);
+#endif
+
+#if 1
+    for (i = 0; i < 20; i++)
+    {
+        if (buf[i] != 0)
+        {
+            AB_DBG("d=%x, %d\n", buf[i], buf_len);
+            break;
+        }
+    }
+#endif
+
+#if 1
+    for (i = 0; i < (buf_len / sizeof(unsigned int)); i += 4)
+    {
+        AB_DBG("[AB] %x %x %x %x\r\n", buf[i], buf[i + 1], buf[i + 2], buf[i + 3]);
+    }
+#endif
+}
+
+#endif
 
 /****************************************************************************
  * Factory operations
@@ -570,33 +623,6 @@ static pj_status_t airb_stream_destroy(pjmedia_aud_stream *strm)
     return PJ_SUCCESS;
 }
 
-static void airb_dump_data(unsigned int *buf, unsigned int buf_len)
-{
-    unsigned int i = 0;
-
-#if 1
-    VP_DBG("%x %x %x %x %d\n", *buf, *(buf + 1), *(buf + 2), *(buf + 4), buf_len);
-#endif
-
-#if 1
-    for (i = 0; i < 20; i++)
-    {
-        if (buf[i] != 0)
-        {
-            AB_DBG("d=%x, %d\n", buf[i], buf_len);
-            break;
-        }
-    }
-#endif
-
-#if 1
-    for (i = 0; i < (buf_len / sizeof(unsigned int)); i += 4)
-    {
-        AB_DBG("[AB] %x %x %x %x\r\n", buf[i], buf[i + 1], buf[i + 2], buf[i + 3]);
-    }
-#endif
-}
-
 static void build_default_rtphdr(pjmedia_rtp_hdr *p_hdr)
 {
     p_hdr->v = RTP_VERSION; /**< packet type/version 	   */
@@ -621,12 +647,20 @@ static void airb_pb_cb_pcm(struct airb_audio_stream *stream)
 
     pj_timestamp tstamp;
     pjmedia_frame frame;
-    char *buf = stream->pb_buf;
+
+    pjmedia_rtp_hdr *rtp_hdr = stream->pb_buf2;
+    char *buf = stream->pb_buf,
+         *rtp_buf = stream->pb_buf2 + sizeof(pjmedia_rtp_hdr);
     int size = stream->pb_buf_size;
     void *user_data = stream->user_data;
     int result;
 
     AB_FUNC_ENT();
+
+    build_default_rtphdr(rtp_hdr);
+    rtp_hdr->seq = pj_htons(stream->tseq);
+    rtp_hdr->ts = pj_htonl(stream->tts);
+    rtp_hdr->ssrc = pj_htonl(stream->tssrc);
 
     frame.type = PJMEDIA_FRAME_TYPE_AUDIO;
     frame.buf = buf;
@@ -635,14 +669,21 @@ static void airb_pb_cb_pcm(struct airb_audio_stream *stream)
     frame.bit_info = 0;
 
     /* get voice from pjsip */
-    //printf("pb_addr2 = %x\r\n", stream->pb_cb);
     result = stream->pb_cb(user_data, &frame);
     pj_assert(frame.type == PJMEDIA_FRAME_TYPE_AUDIO ||
               frame.type == PJMEDIA_FRAME_TYPE_NONE);
 
-    /* convert to G.711 use pjsip api */
+    /*
+     * convert to G.711 use pjsip api
+     * The PCM length is 320 bytes,
+     * which will be convert into 160 bytes G.711 PCMU
+     */
+    pjmedia_ulaw_encode(rtp_buf, buf, AIRB_SAMPLE_PER_PKT);
 
     /* play with dsp */
+    stream->tseq++;
+    stream->tts += AIRB_SAMPLE_PER_PKT;
+    vp_RTPDecode(rtp_hdr, (RTP_HDR_LEN + AIRB_SAMPLE_PER_PKT));
 
     AB_FUNC_LEV();
 }
@@ -655,9 +696,9 @@ static void airb_pb_cb(struct airb_audio_stream *stream)
     void *user_data = stream->user_data;
     int result;
     pjmedia_rtp_hdr *rtp_hdr = stream->pb_buf2;
-    char *buf = stream->pb_buf2 + sizeof(pjmedia_rtp_hdr);
+    char *rtp_buf = stream->pb_buf2 + sizeof(pjmedia_rtp_hdr);
 
-    pj_uint32_t samples_ready = 0, samples_req = 160;
+    pj_uint32_t samples_ready = 0, samples_req = AIRB_SAMPLE_PER_PKT;
 
     AB_FUNC_ENT();
 
@@ -666,12 +707,16 @@ static void airb_pb_cb(struct airb_audio_stream *stream)
     rtp_hdr->ts = pj_htonl(stream->tts);
     rtp_hdr->ssrc = pj_htonl(stream->tssrc);
 
-    /* Call parent stream callback to get samples to play. */
+    /*
+     * Call parent stream callback to get samples to play.
+     * DSP need 160 samples in one short.
+     * But pjsip only provide 80 samples per subframe
+     * Need concat 2 pjsip subframe to forge 1 DSP frame
+     */
     while (samples_ready < samples_req)
     {
         if (frame->samples_cnt == 0)
         {
-            //printf("sample=0\r\n");
             frame->base.type = PJMEDIA_FRAME_TYPE_EXTENDED;
             /* get voice from pjsip */
             result = stream->pb_cb(user_data, frame);
@@ -683,14 +728,12 @@ static void airb_pb_cb(struct airb_audio_stream *stream)
         {
             unsigned samples_cnt;
 
-            //printf("ext!%d\r\n", samples_ready);
-
             sf = pjmedia_frame_ext_get_subframe(frame, 0);
             samples_cnt = frame->samples_cnt / frame->subframe_cnt;
             if ((sf->data) && (sf->bitlen))
             {
-                pj_memcpy(buf, sf->data, (sf->bitlen >> 3));
-                buf += (sf->bitlen >> 3);
+                pj_memcpy(rtp_buf, sf->data, (sf->bitlen >> 3));
+                rtp_buf += (sf->bitlen >> 3);
                 samples_ready += samples_cnt;
             }
             else
@@ -710,9 +753,9 @@ static void airb_pb_cb(struct airb_audio_stream *stream)
     if (samples_ready)
     {
         stream->tseq++;
-        stream->tts += 160;
+        stream->tts += AIRB_SAMPLE_PER_PKT;
 
-        vp_RTPDecode(rtp_hdr, 180);
+        vp_RTPDecode(rtp_hdr, (RTP_HDR_LEN + AIRB_SAMPLE_PER_PKT));
     }
 
     AB_FUNC_LEV();
@@ -731,13 +774,10 @@ void airb_ca_cb(char *FramePtr, short FrameLen)
     {
         frame = g_strm->ca_buf;
 
-        /* thid = (pthread_t *)pj_thread_get_os_handle(pj_thread_this()); */
-        /* TODO: should tid to figure out stream in current thread */
-        /* struct airb_audio_stream *stream = (struct airb_audio_stream *)arg; */
-
         user_data = g_strm->user_data;
 
-        pjmedia_frame_ext_append_subframe(frame, FramePtr + 12, 160 * 8, 160);
+        pjmedia_frame_ext_append_subframe(frame, FramePtr + RTP_HDR_LEN,
+                                          AIRB_SAMPLE_PER_PKT * 8, AIRB_SAMPLE_PER_PKT);
 
         frame->base.type = PJMEDIA_FRAME_TYPE_EXTENDED;
         result = g_strm->ca_cb(user_data, frame);

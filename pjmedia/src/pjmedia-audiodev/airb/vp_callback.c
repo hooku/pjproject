@@ -37,8 +37,7 @@ void SendToNetwork(int CID, char *FramePtr, short FrameLen)
 
     /* Simulate a network loopback by calling the decoder directly
 	// Use the channel TxCID parameter for channel cross connections.*/
-    /* RTPDecoder(ChInfo[CID].TxCID, FramePtr, (short)FrameLen); */
-
+    //RTPDecoder(ChInfo[CID].TxCID, FramePtr, (short)FrameLen);
     airb_ca_cb(FramePtr, (short)FrameLen);
 
     //VP_FUNC_LEV();

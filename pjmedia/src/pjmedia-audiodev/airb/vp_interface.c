@@ -6,6 +6,7 @@
 
 #include <memory.h>
 #include <stdio.h>
+#include <time.h>
 
 // VoicePacketizer Includes
 #include <AC48xIF.h>
@@ -112,7 +113,7 @@ void vp_Init_DSP()
     vp_ConnectChannels(&UserChannelSetupInfo[0], 0, &UserChannelSetupInfo[1], 1);
     */
 
-    vp_OpenDefaultChannel(&UserChannelSetupInfo[0], 0);
+    vp_OpenDefaultChannel(&UserChannelSetupInfo[0], VP_DEFAULT_CID);
 
     /* second time init as fixed by airbridge */
     InitializeEvaluationBoard();

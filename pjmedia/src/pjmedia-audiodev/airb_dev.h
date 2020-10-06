@@ -1,7 +1,17 @@
 #define AIRB_DEBUG 1
 #define AIRB_LOG_LEVEL 1
 
-#define AIRB_THREAD_POLL_INTERVAL   5000    /* us */
+#define AIRB_TEST 0
+
+#define AIRB_SAMPLE_PER_PKT 160
+
+#define AIRB_THREAD_POLL_INTERVAL 1000 /* us */
+
+#define UDP_HDR_LEN 8 /* byte */
+
+#define RTP_VERSION 2
+#define RTP_HDR_LEN sizeof(pjmedia_rtp_hdr)
+#define BITS_PER_SAMPLE 16
 
 #if (AIRB_DEBUG)
 #define AB_DBG(...) printf(__VA_ARGS__)
