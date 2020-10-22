@@ -231,6 +231,10 @@ static void vp_ConfigureUserChannelSetupInfo(TUserChannelSetupInfo *UserChannelS
     /* set to pcmu to fit twilio */
     UserChannelSetupInfo->VoiceCmd.Coder = G711Mulaw;
 
+    UserChannelSetupInfo->SignalingDetectorsControl.CasDetectionDisable = CAS_DETECTION_DISABLE;
+    UserChannelSetupInfo->InputGain = 0x1a;
+    UserChannelSetupInfo->VoiceVolume = 0x1a;
+
     VP_FUNC_LEV();
 }
 

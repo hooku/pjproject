@@ -1,7 +1,7 @@
 #define AIRB_DEBUG 1
 #define AIRB_LOG_LEVEL 1
 
-#define AIRB_TEST 0
+#define AIRB_TEST 1
 
 #define AIRB_SAMPLE_PER_PKT 160
 
