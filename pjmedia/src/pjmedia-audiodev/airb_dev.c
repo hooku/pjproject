@@ -62,6 +62,9 @@ struct airb_audio_stream
     void *user_data;           /**< Application data.     */
 
     pj_thread_t *airb_thread; /* playback thread */
+#if AIRB_THREAD_DUAL
+    pj_thread_t *airb_thread_ca; /* capture thread */
+#endif /* AIRB_THREAD_DUAL */
 
     char *pb_buf; /* playback buffer ptr */
     /*
@@ -115,6 +118,9 @@ static pj_status_t airb_stream_start(pjmedia_aud_stream *strm);
 static pj_status_t airb_stream_stop(pjmedia_aud_stream *strm);
 static pj_status_t airb_stream_destroy(pjmedia_aud_stream *strm);
 
+#if AIRB_THREAD_DUAL
+static int airb_threadfunc_ca(void *arg);
+#endif
 static int airb_threadfunc(void *arg);
 
 static pj_status_t airb_open_pb(struct airb_audio_stream *stream,
@@ -143,6 +149,9 @@ static pjmedia_aud_stream_op stream_op = {
 };
 
 struct airb_audio_stream *g_strm = NULL;
+#if AIRB_THREAD_DUAL
+static pthread_mutex_t mutex_airb;
+#endif /* AIRB_THREAD_DUAL */
 
 #if AIRB_TEST
 static void airb_test_dtmf(void)
@@ -568,6 +577,22 @@ static pj_status_t airb_stream_start(pjmedia_aud_stream *strm)
                                   &stream->airb_thread);
         if (status != PJ_SUCCESS)
             return status;
+
+#if AIRB_THREAD_DUAL
+        if (stream->media_format_id == PJMEDIA_FORMAT_PCMU)
+        {
+            status = pj_thread_create(stream->pool,
+                            "airb_thread_ca",
+                            airb_threadfunc_ca,
+                            stream,
+                            0, //ZERO,
+                            0,
+                            &stream->airb_thread_ca);
+            
+            if (status != PJ_SUCCESS)
+                return status;
+        }
+#endif /* AIRB_THREAD_DUAL */
     }
 
     AB_FUNC_LEV();
@@ -596,6 +621,18 @@ static pj_status_t airb_stream_stop(pjmedia_aud_stream *strm)
         pj_thread_destroy(stream->airb_thread);
         stream->airb_thread = NULL;
     }
+
+#if AIRB_THREAD_DUAL
+    if (stream->airb_thread_ca) {
+        AB_DBG("%s(%u): Waiting for airb_thread_ca to stop.",
+               __FUNCTION__, (unsigned)syscall(SYS_gettid));
+        pj_thread_join (stream->airb_thread_ca);
+        AB_DBG("%s(%u): airb_thread_ca stopped.",
+               __FUNCTION__, (unsigned)syscall(SYS_gettid));
+        pj_thread_destroy(stream->airb_thread_ca);
+        stream->airb_thread_ca = NULL;
+    }
+#endif /* AIRB_THREAD_DUAL */
 
     /* all pool items should be released when stream destory */
 
@@ -755,7 +792,13 @@ static void airb_pb_cb(struct airb_audio_stream *stream)
         stream->tseq++;
         stream->tts += AIRB_SAMPLE_PER_PKT;
 
+#if AIRB_THREAD_DUAL
+        pthread_mutex_lock(&mutex_airb);
+#endif /* AIRB_THREAD_DUAL */
         vp_RTPDecode(rtp_hdr, (RTP_HDR_LEN + AIRB_SAMPLE_PER_PKT));
+#if AIRB_THREAD_DUAL
+        pthread_mutex_unlock(&mutex_airb);
+#endif /* AIRB_THREAD_DUAL */
     }
 
     AB_FUNC_LEV();
@@ -792,6 +835,22 @@ void airb_ca_cb(char *FramePtr, short FrameLen)
     }
 }
 
+#if AIRB_THREAD_DUAL
+static int airb_threadfunc_ca(void *arg)
+{
+    struct airb_audio_stream *stream = (struct airb_audio_stream *)arg;
+
+    while (!stream->quit)
+    {
+        pthread_mutex_lock(&mutex_airb);
+        vp_PollingVoiceStream();
+        pthread_mutex_unlock(&mutex_airb);
+
+        //usleep(AIRB_THREAD_POLL_INTERVAL);
+    }
+}
+#endif /* AIRB_THREAD_DUAL */
+
 static int airb_threadfunc(void *arg)
 {
     struct airb_audio_stream *stream = (struct airb_audio_stream *)arg;
@@ -802,18 +861,20 @@ static int airb_threadfunc(void *arg)
     {
         while (!stream->quit)
         {
+#if AIRB_THREAD_DUAL
+            /*
+             * delay a while for CPU to take a breathe
+             */
+            //usleep(AIRB_THREAD_POLL_INTERVAL);
+#else
             /* 
              * handle cap voice polling
              * which will call airb_ca_cb();
              */
             vp_PollingVoiceStream();
+#endif /* AIRB_THREAD_DUAL */
 
             airb_pb_cb(stream);
-
-            /*
-             * delay a while for CPU to take a breathe
-             */
-            //usleep(AIRB_THREAD_POLL_INTERVAL);
         }
     }
     else

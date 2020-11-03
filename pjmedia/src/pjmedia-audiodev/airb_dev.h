@@ -3,6 +3,8 @@
 
 #define AIRB_TEST 1
 
+#define AIRB_THREAD_DUAL 1
+
 #define AIRB_SAMPLE_PER_PKT 160
 
 #define AIRB_THREAD_POLL_INTERVAL 1000 /* us */
