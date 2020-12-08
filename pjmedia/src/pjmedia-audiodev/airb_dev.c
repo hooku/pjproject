@@ -775,6 +775,13 @@ static void airb_pb_cb(struct airb_audio_stream *stream)
             }
             else
             {
+#if AIRB_THREAD_DUAL
+                /*
+                 * should only check sample every 1/(160*2) sec
+                 * which equals to 0.003125 sec
+                 */
+                usleep(AIRB_THREAD_POLL_INTERVAL);
+#endif
             }
             pjmedia_frame_ext_pop_subframes(frame, 1);
         }
@@ -846,7 +853,7 @@ static int airb_threadfunc_ca(void *arg)
         vp_PollingVoiceStream();
         pthread_mutex_unlock(&mutex_airb);
 
-        //usleep(AIRB_THREAD_POLL_INTERVAL);
+        usleep(AIRB_THREAD_POLL_INTERVAL);
     }
 }
 #endif /* AIRB_THREAD_DUAL */

@@ -7,7 +7,7 @@
 
 #define AIRB_SAMPLE_PER_PKT 160
 
-#define AIRB_THREAD_POLL_INTERVAL 1000 /* us */
+#define AIRB_THREAD_POLL_INTERVAL 3125 /* us */
 
 #define UDP_HDR_LEN 8 /* byte */
 

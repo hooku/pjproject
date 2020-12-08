@@ -179,9 +179,9 @@ void vp_RTPDecode(char *FramePtr, int FrameLen)
     VP_FUNC_ENT();
 
 #if VP_NULL_DSP
-    RTPDecoder(VP_DEFAULT_CID, FramePtr, FrameLen);
-#else /* VP_NULL_DSP */
     usleep(5000);
+#else /* VP_NULL_DSP */
+    RTPDecoder(VP_DEFAULT_CID, FramePtr, FrameLen);
 #endif
 
     VP_FUNC_LEV();
