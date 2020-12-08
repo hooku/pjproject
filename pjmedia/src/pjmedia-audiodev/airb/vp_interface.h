@@ -4,6 +4,7 @@
 #define VP_DEBUG 1
 #define VP_LOG_LEVEL 1
 #define VP_FAST_INIT 0
+#define VP_NULL_DSP 0
 
 #if (VP_DEBUG)
 #define VP_DBG(...) printf(__VA_ARGS__)
